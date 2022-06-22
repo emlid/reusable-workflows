@@ -1,0 +1,40 @@
+name: Trivy vulnerability scanner
+
+on:
+  workflow_call:
+    inputs:
+      dockerimages:
+        description: "Stringified JSON object listing target docker images"
+        required: true
+        type: string
+    secrets:
+      doctl_token:
+        description: "DigitalOcean docker registry access token"
+        required: true
+jobs:
+  trivy:
+    name: Run Trivy vulnerability scanner
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ${{fromJson(inputs.dockerimages)}}
+    steps:
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.doctl_token }}
+      - name: Login to the DigitalOcean Container Registry
+        run: doctl registry login --expiry-seconds 600
+      - name: Pull docker image
+        run: |
+          docker pull ${{ matrix.image }}
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "${{ matrix.image }}"
+          format: "table"
+          vuln-type: "os,library"
+          ignore-unfixed: true
+          severity: "HIGH,CRITICAL"
+          exit-code: "1"
