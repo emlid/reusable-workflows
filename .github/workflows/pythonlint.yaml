@@ -1,0 +1,51 @@
+name: Python linters
+
+on:
+  workflow_call:
+    inputs:
+      source_dirs:
+        description: "Stringified JSON object listing target source folders"
+        required: true
+        type: string
+      python_version:
+        description: "Python version"
+        required: false
+        type: string
+        default: "3.8"
+
+jobs:
+  pythonlint:
+    name: Lint Python code
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        folder: ${{fromJson(inputs.source_dirs)}}
+    defaults:
+      run:
+        working-directory: ${{ matrix.folder }}
+    steps:
+      - name: Git checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: "true"
+      - name: Get repo root path
+        run: |
+          echo "GIT_ROOT=$(git rev-parse --show-toplevel)" >> $GITHUB_ENV
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python_version }}
+      - name: Install tox
+        run: pip install tox
+      - name: Run black
+        run: tox -e black
+      - name: Run mypy
+        if: success() || failure()
+        run: tox -e mypy
+      - name: Run pylint
+        if: success() || failure()
+        run: tox -e pylint
+      - name: Run flake
+        if: success() || failure()
+        run: tox -e flake
