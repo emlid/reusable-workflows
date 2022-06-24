@@ -1,0 +1,24 @@
+name: Hadolint dockerfile linter
+
+on:
+  workflow_call:
+    inputs:
+      dockerfiles:
+        description: "Stringified JSON object listing target dockerfiles"
+        required: false
+        type: string
+        default: >-
+          ["./Dockerfile"]
+jobs:
+  hadolint:
+    name: Lint Dockerfiles
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dockerfile: ${{fromJson(inputs.dockerfiles)}}
+    steps:
+      - name: Git checkout
+        uses: actions/checkout@v3
+      - name: Docker lint ${{ matrix.dockerfile }}
+        run: docker run --rm -i "hadolint/hadolint:v2.2.0" < "${{ matrix.dockerfile }}"
