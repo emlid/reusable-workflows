@@ -1,0 +1,22 @@
+name: Git linter
+
+on:
+  workflow_call:
+
+jobs:
+  gitlint:
+    name: Lint commit messages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Git checkout
+        uses: actions/checkout@v1
+        with:
+          submodules: "true"
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - name: Install gitlint
+        run: pip install gitlint
+      - name: Run gitlint
+        run: gitlint --config code-quality/git/gitlint --commits ${{ github.event.pull_request.base.sha }}..HEAD
