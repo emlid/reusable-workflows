@@ -1,0 +1,42 @@
+name: Add version and latest tags to docker image
+
+on:
+  workflow_call:
+    inputs:
+      images:
+        description: "Stringified JSON object listing that contains image name and tag"
+        required: true
+        type: string
+        default: >-
+          {
+            "include": [
+              {
+                "image": "docker-registry/user/myapp",
+                "image_tag": "test123"
+              }
+            ]
+          }
+    secrets:
+      doctl_token:
+        description: "DigitalOcean docker registry access token"
+        required: true
+jobs:
+  dockertag:
+    name: Make new docker tags
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{fromJson(inputs.images)}}
+    steps:
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.doctl_token }}
+      - name: Login to the DigitalOcean Container Registry
+        run: doctl registry login --expiry-seconds 600
+      - name: Make ${{ matrix.image }} docker tag
+        run: |
+          docker pull ${{ matrix.image }}:${{ matrix.image_tag }}
+          for tag in "latest" "${{ github.event.release.tag_name }}"; do
+            docker tag ${{ matrix.image }}:${{ matrix.image_tag }} ${{ matrix.image }}:${tag}
+            docker push ${{ matrix.image }}:${tag}
+          done
