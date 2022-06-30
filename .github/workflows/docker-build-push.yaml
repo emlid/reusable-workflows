@@ -63,6 +63,7 @@ jobs:
           cache-to: type=local,dest=/tmp/.buildx-cache-new
           file: ${{ matrix.file }}
           build-args: ${{ matrix.build-args }}
+          context: ${{ matrix.context }}
           secrets: ${{ secrets.build_secrets }}
       - name: Move cache
         run: |
