@@ -29,6 +29,11 @@ jobs:
       - name: Pull docker image
         run: |
           docker pull ${{ matrix.image }}
+      - name: Git checkout
+        uses: actions/checkout@v3
+      - name: Get .trivyignore file or nothing
+        run: find .trivyignore 2> /dev/null || true
+        id: find_trivyignore
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
@@ -38,3 +43,4 @@ jobs:
           ignore-unfixed: true
           severity: "HIGH,CRITICAL"
           exit-code: "1"
+          trivyignores: ${{ steps.find_trivyignore.outputs.value }}
